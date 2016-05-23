@@ -33,5 +33,10 @@ class America_ACF_Local_Json_Manager_Activator {
 		* @since    1.0.0
 		*/
 
-	public static function activate() {}
+	public static function activate() {
+		if ( ! class_exists( 'acf' ) ) {
+			deactivate_plugins( plugin_basename( __FILE__ ) );
+			wp_die( 'Could not activate plugin because Advanced Custom Fields was not found. Please activate ACF or a plugin/theme that includes it as a dependency.' );
+		}
+	}
 }

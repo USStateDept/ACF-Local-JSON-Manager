@@ -81,4 +81,35 @@ class America_ACF_Local_Json_Manager_Admin {
 	public function enqueue_scripts() {
 		wp_enqueue_script( $this->America_ACF_Local_Json_Manager, plugin_dir_url( __FILE__ ) . 'js/america-acf-local-json-manager-admin.js', array( 'jquery' ), $this->version, false );
 	}
+
+
+	/**
+		* Deactivate if ACF no longer found
+		*
+		* @since 		1.0.0
+		*/
+
+	public function automatically_deactivate() {
+		$file = AMERICA_ACF_LJM_DIR . 'america-acf-local-json-manager.php';
+
+		if ( ! class_exists( 'acf' ) ) {
+			deactivate_plugins( $file );
+			add_action( 'admin_notices', array( $this, 'disabled_notice' ) );
+		}
+	}
+
+
+	/**
+		* Notify user this plugin was deactivated
+		*
+		* @since 		1.0.0
+		*/
+
+	public function disabled_notice() {
+		$classes = 'notice notice-error';
+		$message = __( 'ACF Local JSON Manager was deactivated because Advanced Custom Fields could not be found.', 'america' );
+
+		$html = sprintf( '<div class="%s"><p>%s</p></div>', $classes, $message );
+		echo $html;
+	}
 }

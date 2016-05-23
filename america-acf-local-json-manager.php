@@ -17,34 +17,30 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 
+// Constants
+define( 'AMERICA_ACF_LJM_DIR', plugin_dir_path( dirname( __FILE__ ) ) . 'america-acf-local-json-manager/' );
 
 
 // Activate
 function activate_America_ACF_Local_Json_Manager() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-america-acf-local-json-manager-activator.php';
+	require_once AMERICA_ACF_LJM_DIR . 'includes/class-america-acf-local-json-manager-activator.php';
 	America_ACF_Local_Json_Manager_Activator::activate();
 }
-
-register_activation_hook( __FILE__, 'activate_America_ACF_Local_Json_Manager' );
-
 
 
 
 // Deactivate
 function deactivate_America_ACF_Local_Json_Manager() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-america-acf-local-json-manager-deactivator.php';
+	require_once AMERICA_ACF_LJM_DIR . 'includes/class-america-acf-local-json-manager-deactivator.php';
 	America_ACF_Local_Json_Manager_Deactivator::deactivate();
 }
 
+register_activation_hook( __FILE__, 'activate_America_ACF_Local_Json_Manager' );
 register_deactivation_hook( __FILE__, 'deactivate_America_ACF_Local_Json_Manager' );
 
 
-
-
 // Core plugin file
-require plugin_dir_path( __FILE__ ) . 'includes/class-america-acf-local-json-manager.php';
-
-
+require AMERICA_ACF_LJM_DIR . 'includes/class-america-acf-local-json-manager.php';
 
 
 /**
@@ -57,10 +53,8 @@ require plugin_dir_path( __FILE__ ) . 'includes/class-america-acf-local-json-man
 	* @since    1.0.0
 	*/
 function run_america_acf_local_json_manager() {
-
 	$plugin = new America_ACF_Local_Json_Manager();
 	$plugin->run();
-
 }
 
-run_america_acf_local_json_manager();
+add_action( 'plugins_loaded', 'run_america_acf_local_json_manager' );
