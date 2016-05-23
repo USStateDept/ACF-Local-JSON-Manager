@@ -1,0 +1,15 @@
+{
+    "name": "usstatedept/america-acf-local-json-manager",
+    "type": "wordpress-plugin",
+    "description" : "A Wordpress plugin that syncs ACF local json forms to/from multiple save and load points.",
+    "authors": [
+        {
+            "name": "Office of Design, U.S. Department of State",
+            "email": "kleekampnf@america.gov"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+       "composer/installers": "~1.0"
+    }
+}
