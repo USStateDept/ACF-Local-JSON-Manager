@@ -103,10 +103,10 @@ class America_ACF_Local_Json_Manager {
 		*/
 
 	private function load_dependencies() {
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-america-acf-local-json-manager-loader.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-america-acf-local-json-manager-i18n.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-america-acf-local-json-manager-admin.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-america-acf-local-json-manager-public.php';
+		require_once AMERICA_ACF_LJM_DIR . 'includes/class-america-acf-local-json-manager-loader.php';
+		require_once AMERICA_ACF_LJM_DIR . 'includes/class-america-acf-local-json-manager-i18n.php';
+		require_once AMERICA_ACF_LJM_DIR . 'admin/class-america-acf-local-json-manager-admin.php';
+		require_once AMERICA_ACF_LJM_DIR . 'public/class-america-acf-local-json-manager-public.php';
 		$this->loader = new America_ACF_Local_Json_Manager_Loader();
 	}
 
@@ -139,6 +139,7 @@ class America_ACF_Local_Json_Manager {
 		$plugin_admin = new America_ACF_Local_Json_Manager_Admin( $this->get_America_ACF_Local_Json_Manager(), $this->get_version() );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+		$this->loader->add_action( 'admin_init', $plugin_admin, 'automatically_deactivate' );
 	}
 
 
