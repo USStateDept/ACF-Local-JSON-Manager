@@ -23,3 +23,7 @@
   margin: 5px 0;
   width: 100%;
 }
+
+.america-acf-save-location.required {
+  border: 1px solid #a00;
+}
