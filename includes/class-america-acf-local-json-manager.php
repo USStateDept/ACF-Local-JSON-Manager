@@ -107,6 +107,11 @@ class America_ACF_Local_Json_Manager {
 		require_once AMERICA_ACF_LJM_DIR . 'includes/class-america-acf-local-json-manager-i18n.php';
 		require_once AMERICA_ACF_LJM_DIR . 'admin/class-america-acf-local-json-manager-admin.php';
 		require_once AMERICA_ACF_LJM_DIR . 'public/class-america-acf-local-json-manager-public.php';
+
+		if ( getenv('DEV') ) {
+			add_filter('acf/settings/show_admin', '__return_true');
+		}
+
 		$this->loader = new America_ACF_Local_Json_Manager_Loader();
 	}
 
@@ -140,6 +145,8 @@ class America_ACF_Local_Json_Manager {
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'automatically_deactivate' );
+		$this->loader->add_action( 'post_submitbox_misc_actions', $plugin_admin, 'america_acf_ljm_publish_location' );
+		$this->loader->add_action( 'save_post', $plugin_admin, 'america_acf_ljm_save' );
 	}
 
 

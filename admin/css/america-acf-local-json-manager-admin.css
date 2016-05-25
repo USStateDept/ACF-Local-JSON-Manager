@@ -1,4 +1,25 @@
 /**
- * All of the CSS for your admin-specific functionality should be
- * included in this file.
- */
+  * All of the CSS for your admin-specific functionality should be
+  * included in this file.
+  */
+
+.america-acf-save-location-icon::before {
+  color: #82878c;
+  content: "\f322";
+  font: 400 20px/1 dashicons;
+  display: inline-block;
+  left: -1px;
+  padding: 0 5px 0 0;
+  position: relative;
+  speak: none;
+  vertical-align: top;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-decoration: none !important;
+  top: -1px;
+}
+
+.wp-admin .america-acf-save-location {
+  margin: 5px 0;
+  width: 100%;
+}
