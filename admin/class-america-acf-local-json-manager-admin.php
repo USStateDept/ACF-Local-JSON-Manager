@@ -112,4 +112,137 @@ class America_ACF_Local_Json_Manager_Admin {
 		$html = sprintf( '<div class="%s"><p>%s</p></div>', $classes, $message );
 		echo $html;
 	}
+
+
+	/**
+		* Returns the load_json paths registered with ACF
+		*
+		* @return 	array
+		* @since 		1.0.0
+		*/
+
+	public function get_acf_load_json() {
+		if ( ! class_exists( 'acf' ) ) {
+			return;
+		}
+
+		$load_json_paths = acf_get_setting( 'load_json' );
+
+		// Check that directory is readable and writeable. If not, remove it from the `load_json` settings
+		foreach ( $load_json_paths as $path ) {
+			if ( ! is_writable( $path) || ! is_readable( $path ) ) {
+				$load_json_paths = array_diff( $load_json_paths, array( $path ) );
+			}
+		}
+
+		return $load_json_paths;
+	}
+
+
+	/**
+		* Get a shorter file path, starting from `wp-content` by default for a nicer
+		* display, for example in the `acf_save_location` select box
+		*
+		* @param 		string		$path 		A directory path
+		* @return 	string
+		* @since		1.0.0
+		*/
+
+	public function plugin_theme_basename( $path ) {
+		$wp_content = 'wp-content/';
+
+		if ( has_filter( 'america_acf_plugin_theme_location' ) ) {
+			$wp_content = apply_filter( 'america_acf_plugin_theme_location' );
+		}
+
+		$offset = strpos( $path, $wp_content);
+
+		if ( $offset === false ) {
+			return $path;
+		}
+
+		return substr( $path, $offset + strlen( $wp_content ) );
+	}
+
+
+	/**
+		* The select box for choosing the correct save directory
+		*
+		* @param 		array 	$options		The possible local json save locations
+		* @param 		string 	$value			The previously stored save location
+		* @since 		1.0.0
+		*/
+
+	public function america_acf_ljm_select( $options, $value ) {
+		$html = '<div class="misc-pub-section acf-location">';
+			$html .= '<span class="america-acf-save-location-icon"></span>';
+			$html .= sprintf( '<label for="acf_save_location">%s</label>', __( 'Local JSON Save Location:', 'america' ) );
+			$html .= '<select id="acf_save_location" name="acf_save_location" class="america-acf-save-location" autocomplete="off">';
+			$html .= sprintf( '<option>%s</option>', __( 'Choose Save Location', 'america' ) );
+
+			foreach ( $options as $option ) {
+				$html .= sprintf( '<option value=%s %s>%s</option>', esc_attr( $option ), ( $option === $value ? 'selected="selected"' : null ), $this->plugin_theme_basename( esc_attr( $option ) ) );
+			}
+
+			$html .= '</select>';
+		$html .= '</div>';
+
+		echo $html;
+	}
+
+
+	/**
+		* Get the previously saved value from the db, get the possible save locations, and
+		* display the select box.
+		*
+		* @since 		1.0.0
+		*/
+
+	public function america_acf_ljm_publish_location() {
+		global $post;
+
+		// Paranoid check user is an admin. If not, bail
+		if ( ! current_user_can( 'activate_plugins' ) ) return;
+
+		// Bail if not an acf-field-group
+		if ( get_post_type( $post ) != 'acf-field-group' ) {
+			return false;
+		}
+
+		// readable/writable save locations
+		$options = $this->get_acf_load_json();
+
+		// if there aren't any possible save locations, bail
+		if ( empty( $options) ) {
+			return;
+		}
+
+		// previous saved value saved in the db
+		$value = get_post_meta($post->ID, 'acf_save_location', true);
+
+		// display the select box
+		$this->america_acf_ljm_select( $options, $value);
+	}
+
+
+	/**
+		* Save the load/save full path to the `acf_save_location` wp_postmeta field
+		*
+		* @param		integer		$post_id
+		*/
+
+	public function america_acf_ljm_save( $post_id ) {
+		// If autosaving, bail
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
+
+		// Paranoid check user is an admin. If not, bail
+		if ( ! current_user_can( 'activate_plugins' ) ) return;
+
+		// Bail if not an acf-field-group
+		if ( empty( $post_id ) || $_POST['post_type'] != 'acf-field-group' ) return false;
+
+		if( isset( $_POST['acf_save_location'] ) ) {
+			update_post_meta( $post_id, 'acf_save_location', esc_attr( $_POST['acf_save_location'] ) );
+		}
+	}
 }
