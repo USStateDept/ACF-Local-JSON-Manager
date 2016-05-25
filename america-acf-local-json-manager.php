@@ -2,7 +2,7 @@
 
 /**********************************************************************************************************
 Plugin Name:    America ACF Local JSON Manager
-Description:    A Wordpress plugin that syncs ACF local json forms to/from multiple save and load points.
+Description:    A Wordpress plugin that gives administrators the ability to choose where to save an ACF field group's local JSON.
 Version:        1.0.0
 Author:         Office of Design, U.S. Department of State
 License:        MIT
