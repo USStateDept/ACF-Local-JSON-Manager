@@ -48,6 +48,17 @@ class America_ACF_Local_Json_Manager_Admin {
 
 
 	/**
+		* The value we will override ACF's `save_json` location
+		*
+		* @since 		1.0.0
+		* @access		private
+		* @var			string		$save_json_location		The save location (absolute directory path)
+		*/
+
+	private $save_json_location;
+
+
+	/**
 		* Initialize the class and set its properties.
 		*
 		* @since    1.0.0
@@ -169,19 +180,20 @@ class America_ACF_Local_Json_Manager_Admin {
 		* The select box for choosing the correct save directory
 		*
 		* @param 		array 	$options		The possible local json save locations
-		* @param 		string 	$value			The previously stored save location
+		* @param 		string 	$selected		The previously stored save location
 		* @since 		1.0.0
 		*/
 
-	public function america_acf_ljm_select( $options, $value ) {
+	public function america_acf_ljm_select( $options, $selected ) {
 		$html = '<div class="misc-pub-section acf-location">';
 			$html .= '<span class="america-acf-save-location-icon"></span>';
 			$html .= sprintf( '<label for="acf_save_location">%s</label>', __( 'Local JSON Save Location:', 'america' ) );
-			$html .= '<select id="acf_save_location" name="acf_save_location" class="america-acf-save-location" autocomplete="off">';
-			$html .= sprintf( '<option>%s</option>', __( 'Choose Save Location', 'america' ) );
+			$html .= wp_nonce_field( 'america_acf_save_location_nonce', '_america_acf_save_location_nonce' );
+			$html .= '<select id="acf_save_location" name="acf_save_location" class="america-acf-save-location required" autocomplete="off" required>';
+			$html .= sprintf( '<option value="default">%s</option>', __( 'Choose Save Location', 'america' ) );
 
 			foreach ( $options as $option ) {
-				$html .= sprintf( '<option value=%s %s>%s</option>', esc_attr( $option ), ( $option === $value ? 'selected="selected"' : null ), $this->plugin_theme_basename( esc_attr( $option ) ) );
+				$html .= sprintf( '<option value=%s %s>%s</option>', esc_attr( $option ), ( $option === $selected ? 'selected="selected"' : null ), $this->plugin_theme_basename( esc_attr( $option ) ) );
 			}
 
 			$html .= '</select>';
@@ -217,11 +229,19 @@ class America_ACF_Local_Json_Manager_Admin {
 			return;
 		}
 
-		// previous saved value saved in the db
-		$value = get_post_meta($post->ID, 'acf_save_location', true);
+		// limit the choice of saving locations to the location it was loaded from
+		foreach ( $options as $option ) {
+			if ( file_exists( sprintf( '%s/%s.json', $option, $post->post_name ) ) ) {
+				$options = array( $option );
+				$this->save_json_location = $option;
+			}
+		}
+
+		// override acf's `save_json`
+		$this->america_acf_ljm_override_save_json();
 
 		// display the select box
-		$this->america_acf_ljm_select( $options, $value);
+		$this->america_acf_ljm_select( $options, $this->save_json_location );
 	}
 
 
@@ -238,11 +258,36 @@ class America_ACF_Local_Json_Manager_Admin {
 		// Paranoid check user is an admin. If not, bail
 		if ( ! current_user_can( 'activate_plugins' ) ) return;
 
+		// if our nonce isn't there, or we can't verify it, bail
+    if( !isset( $_POST['_america_acf_save_location_nonce'] ) || !wp_verify_nonce( $_POST['_america_acf_save_location_nonce'], 'america_acf_save_location_nonce' ) ) {
+			wp_die('Bad nonce!');
+			return;
+		}
+
 		// Bail if not an acf-field-group
 		if ( empty( $post_id ) || $_POST['post_type'] != 'acf-field-group' ) return false;
 
+		// Save
 		if( isset( $_POST['acf_save_location'] ) ) {
-			update_post_meta( $post_id, 'acf_save_location', esc_attr( $_POST['acf_save_location'] ) );
+			// Get choice from the select box
+			$this->save_json_location = esc_attr( $_POST['acf_save_location'] );
+
+			// override acf's `save_json`
+			$this->america_acf_ljm_override_save_json();
 		}
+	}
+
+
+	/**
+		*	A utility method for overriding ACF's `save_json` with `$this->save_json_location`
+		*
+		* @since 		1.0.0
+		*/
+
+	public function america_acf_ljm_override_save_json() {
+		add_action('acf/settings/save_json', function( $path ) {
+			$path = $this->save_json_location;
+			return $path;
+		});
 	}
 }
