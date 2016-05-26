@@ -142,11 +142,11 @@ class America_ACF_Local_Json_Manager {
 
 	private function define_admin_hooks() {
 		$plugin_admin = new America_ACF_Local_Json_Manager_Admin( $this->get_America_ACF_Local_Json_Manager(), $this->get_version() );
-		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
-		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
-		$this->loader->add_action( 'admin_init', $plugin_admin, 'automatically_deactivate' );
-		$this->loader->add_action( 'post_submitbox_misc_actions', $plugin_admin, 'america_acf_ljm_publish_location' );
-		$this->loader->add_action( 'save_post', $plugin_admin, 'america_acf_ljm_save' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'america_enqueue_styles' );
+		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'america_enqueue_scripts' );
+		$this->loader->add_action( 'admin_init', $plugin_admin, 'america_automatically_deactivate' );
+		$this->loader->add_action( 'post_submitbox_misc_actions', $plugin_admin, 'america_publish_location' );
+		$this->loader->add_action( 'save_post', $plugin_admin, 'america_save_local_json' );
 	}
 
 

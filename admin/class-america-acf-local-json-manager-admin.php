@@ -59,6 +59,17 @@ class America_ACF_Local_Json_Manager_Admin {
 
 
 	/**
+		* The `load_json` paths registered with ACF
+		*
+		* @since 		1.0.0
+		* @access		private
+		* @var			array		$load_json_locations		The load locations (absolute directory paths)
+		*/
+
+	private $load_json_locations;
+
+
+	/**
 		* Initialize the class and set its properties.
 		*
 		* @since    1.0.0
@@ -78,7 +89,7 @@ class America_ACF_Local_Json_Manager_Admin {
 		* @since    1.0.0
 		*/
 
-	public function enqueue_styles() {
+	public function america_enqueue_styles() {
 		wp_enqueue_style( $this->America_ACF_Local_Json_Manager, plugin_dir_url( __FILE__ ) . 'css/america-acf-local-json-manager-admin.css', array(), $this->version, 'all' );
 	}
 
@@ -89,7 +100,7 @@ class America_ACF_Local_Json_Manager_Admin {
 		* @since    1.0.0
 		*/
 
-	public function enqueue_scripts() {
+	public function america_enqueue_scripts() {
 		wp_enqueue_script( $this->America_ACF_Local_Json_Manager, plugin_dir_url( __FILE__ ) . 'js/america-acf-local-json-manager-admin.js', array( 'jquery' ), $this->version, false );
 	}
 
@@ -100,12 +111,12 @@ class America_ACF_Local_Json_Manager_Admin {
 		* @since 		1.0.0
 		*/
 
-	public function automatically_deactivate() {
+	public function america_automatically_deactivate() {
 		$file = AMERICA_ACF_LJM_DIR . 'america-acf-local-json-manager.php';
 
 		if ( ! class_exists( 'acf' ) ) {
 			deactivate_plugins( $file );
-			add_action( 'admin_notices', array( $this, 'disabled_notice' ) );
+			add_action( 'admin_notices', array( $this, 'america_disabled_notice' ) );
 		}
 	}
 
@@ -116,7 +127,7 @@ class America_ACF_Local_Json_Manager_Admin {
 		* @since 		1.0.0
 		*/
 
-	public function disabled_notice() {
+	public function america_disabled_notice() {
 		$classes = 'notice notice-error';
 		$message = __( 'ACF Local JSON Manager was deactivated because Advanced Custom Fields could not be found.', 'america' );
 
@@ -132,7 +143,7 @@ class America_ACF_Local_Json_Manager_Admin {
 		* @since 		1.0.0
 		*/
 
-	public function get_acf_load_json() {
+	private function america_get_acf_load_json() {
 		if ( ! class_exists( 'acf' ) ) {
 			return;
 		}
@@ -151,19 +162,18 @@ class America_ACF_Local_Json_Manager_Admin {
 
 
 	/**
-		* Get a shorter file path, starting from `wp-content` by default for a nicer
-		* display, for example in the `acf_save_location` select box
+		* Get a shorter file path, starting from `wp-content` by default for nicer display
 		*
 		* @param 		string		$path 		A directory path
 		* @return 	string
 		* @since		1.0.0
 		*/
 
-	public function plugin_theme_basename( $path ) {
+	private function america_plugin_theme_basename( $path ) {
 		$wp_content = 'wp-content/';
 
 		if ( has_filter( 'america_acf_plugin_theme_location' ) ) {
-			$wp_content = apply_filter( 'america_acf_plugin_theme_location' );
+			$wp_content = apply_filter( 'america_acf_plugin_theme_location', $wp_content );
 		}
 
 		$offset = strpos( $path, $wp_content);
@@ -177,23 +187,42 @@ class America_ACF_Local_Json_Manager_Admin {
 
 
 	/**
+		* Limit saving location to the directory from which the field was loaded
+		*
+		* @param 		object		$post			Global $post object
+		* @since		1.0.0
+		*/
+
+	private function america_limit_choices( $post ) {
+		foreach ( $this->load_json_locations as $option ) {
+			$file = sprintf( '%s/%s.json', $option, $post->post_name );
+
+			if ( file_exists( $file ) ) {
+				$this->load_json_locations = array_intersect( $this->load_json_locations, array( $option ) );
+				$this->save_json_location = array_search( $option, $this->load_json_locations );
+			}
+		}
+	}
+
+
+	/**
 		* The select box for choosing the correct save directory
 		*
 		* @param 		array 	$options		The possible local json save locations
-		* @param 		string 	$selected		The previously stored save location
+		* @param 		string 	$selected		The option that should be selected
 		* @since 		1.0.0
 		*/
 
-	public function america_acf_ljm_select( $options, $selected ) {
+	private function america_select( $options, $selected ) {
 		$html = '<div class="misc-pub-section acf-location">';
 			$html .= '<span class="america-acf-save-location-icon"></span>';
 			$html .= sprintf( '<label for="acf_save_location">%s</label>', __( 'Local JSON Save Location:', 'america' ) );
-			$html .= wp_nonce_field( 'america_acf_save_location_nonce', '_america_acf_save_location_nonce' );
 			$html .= '<select id="acf_save_location" name="acf_save_location" class="america-acf-save-location required" autocomplete="off" required>';
 			$html .= sprintf( '<option value="default">%s</option>', __( 'Choose Save Location', 'america' ) );
 
 			foreach ( $options as $option ) {
-				$html .= sprintf( '<option value=%s %s>%s</option>', esc_attr( $option ), ( $option === $selected ? 'selected="selected"' : null ), $this->plugin_theme_basename( esc_attr( $option ) ) );
+				$index = array_search( esc_attr( $option ), $options );
+				$html .= sprintf( '<option value=%s %s>%s</option>', $index, ( $index === $selected ? 'selected="selected"' : null ), $this->america_plugin_theme_basename( esc_attr( $option ) ) );
 			}
 
 			$html .= '</select>';
@@ -204,13 +233,12 @@ class America_ACF_Local_Json_Manager_Admin {
 
 
 	/**
-		* Get the previously saved value from the db, get the possible save locations, and
-		* display the select box.
+		* Populate the select box options and display it
 		*
 		* @since 		1.0.0
 		*/
 
-	public function america_acf_ljm_publish_location() {
+	public function america_publish_location() {
 		global $post;
 
 		// Paranoid check user is an admin. If not, bail
@@ -222,50 +250,41 @@ class America_ACF_Local_Json_Manager_Admin {
 		}
 
 		// readable/writable save locations
-		$options = $this->get_acf_load_json();
+		$this->load_json_locations = $this->america_get_acf_load_json();
 
 		// if there aren't any possible save locations, bail
-		if ( empty( $options) ) {
+		if ( empty( $this->load_json_locations) ) {
 			return;
 		}
 
-		// limit the choice of saving locations to the location it was loaded from
-		foreach ( $options as $option ) {
-			if ( file_exists( sprintf( '%s/%s.json', $option, $post->post_name ) ) ) {
-				$options = array( $option );
-				$this->save_json_location = $option;
-			}
-		}
+		// if not a new field group, limit saving location to the directory from which it was loaded
+		$this->america_limit_choices( $post );
 
 		// override acf's `save_json`
-		$this->america_acf_ljm_override_save_json();
+		$this->america_override_save_json();
 
 		// display the select box
-		$this->america_acf_ljm_select( $options, $this->save_json_location );
+		$this->america_select( $this->load_json_locations, $this->save_json_location );
 	}
 
 
 	/**
-		* Save the load/save full path to the `acf_save_location` wp_postmeta field
+		* Save the local json file to the specified location
 		*
 		* @param		integer		$post_id
 		*/
 
-	public function america_acf_ljm_save( $post_id ) {
+	public function america_save_local_json( $post_id ) {
 		// If autosaving, bail
 		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) return;
 
 		// Paranoid check user is an admin. If not, bail
 		if ( ! current_user_can( 'activate_plugins' ) ) return;
 
-		// if our nonce isn't there, or we can't verify it, bail
-    if( !isset( $_POST['_america_acf_save_location_nonce'] ) || !wp_verify_nonce( $_POST['_america_acf_save_location_nonce'], 'america_acf_save_location_nonce' ) ) {
-			wp_die('Bad nonce!');
-			return;
-		}
-
 		// Bail if not an acf-field-group
 		if ( empty( $post_id ) || $_POST['post_type'] != 'acf-field-group' ) return false;
+
+		$this->load_json_locations = $this->america_get_acf_load_json();
 
 		// Save
 		if( isset( $_POST['acf_save_location'] ) ) {
@@ -273,7 +292,7 @@ class America_ACF_Local_Json_Manager_Admin {
 			$this->save_json_location = esc_attr( $_POST['acf_save_location'] );
 
 			// override acf's `save_json`
-			$this->america_acf_ljm_override_save_json();
+			$this->america_override_save_json();
 		}
 	}
 
@@ -284,9 +303,9 @@ class America_ACF_Local_Json_Manager_Admin {
 		* @since 		1.0.0
 		*/
 
-	public function america_acf_ljm_override_save_json() {
+	private function america_override_save_json() {
 		add_action('acf/settings/save_json', function( $path ) {
-			$path = $this->save_json_location;
+			$path = $this->load_json_locations[$this->save_json_location];
 			return $path;
 		});
 	}
